@@ -61,10 +61,6 @@ export function Hero({ onCtaClick }: HeroProps) {
             <CheckCircle className="w-4 h-4 text-primary" />
             Carpentry
           </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-primary" />
-            Contracting
-          </div>
         </div>
       </div>
     </section>
