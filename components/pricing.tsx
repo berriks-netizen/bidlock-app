@@ -32,7 +32,7 @@ export function Pricing({ onCtaClick }: PricingProps) {
         <div className="bg-card border-2 border-primary rounded-2xl p-6 md:p-8 shadow-xl shadow-primary/10">
           <div className="text-center mb-6">
             <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-5xl md:text-6xl font-bold text-foreground">$69</span>
+              <span className="text-5xl md:text-6xl font-bold text-foreground">$39</span>
               <span className="text-xl text-muted-foreground">/month</span>
             </div>
             <p className="text-muted-foreground font-medium">
