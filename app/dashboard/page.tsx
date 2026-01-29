@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,49 +22,12 @@ import {
 } from "lucide-react"
 
 const stats = [
-  { label: "Sent", value: "5", color: "bg-primary/10 text-primary" },
-  { label: "Pending", value: "$24,500", color: "bg-secondary/10 text-secondary" },
-  { label: "Accepted", value: "3", color: "bg-emerald-500/10 text-emerald-600" },
+  { label: "Sent", value: "0", color: "bg-primary/10 text-primary" },
+  { label: "Pending", value: "$0", color: "bg-secondary/10 text-secondary" },
+  { label: "Accepted", value: "0", color: "bg-emerald-500/10 text-emerald-600" },
 ]
 
-const proposals = [
-  {
-    id: 1,
-    customer: "Johnson Family",
-    address: "1247 Oak Street, Austin, TX 78701",
-    service: "Roof Replacement",
-    amount: 12500,
-    status: "sent",
-    date: "2 days ago",
-  },
-  {
-    id: 2,
-    customer: "Martinez Residence",
-    address: "892 Maple Ave, Round Rock, TX 78664",
-    service: "Shingle Repair",
-    amount: 2800,
-    status: "accepted",
-    date: "3 days ago",
-  },
-  {
-    id: 3,
-    customer: "Thompson Commercial",
-    address: "4521 Industrial Blvd, Austin, TX 78745",
-    service: "Full Roof Install",
-    amount: 45000,
-    status: "sent",
-    date: "5 days ago",
-  },
-  {
-    id: 4,
-    customer: "Williams Home",
-    address: "331 Cedar Lane, Georgetown, TX 78628",
-    service: "Gutter Install",
-    amount: 1850,
-    status: "declined",
-    date: "1 week ago",
-  },
-];
+const proposals: any[] = []
 
 const navItems = [
   { icon: Home, label: "Home", active: true },
@@ -124,9 +88,13 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">P</span>
-            </div>
+            <Image 
+              src="/bidlock-logo.svg" 
+              alt="BidLock Logo" 
+              width={28} 
+              height={28}
+              className="w-7 h-7"
+            />
             <span className="font-semibold text-foreground">BidLock</span>
           </div>
           <div className="flex items-center gap-2">
@@ -144,8 +112,8 @@ export default function DashboardPage() {
       <main className="px-4 py-6 space-y-6">
         {/* Welcome Message */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Hey Mike! <span className="inline-block">👋</span>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+          Hey {user?.user_metadata?.business_name || 'there'}! 👋
           </h1>
           <p className="text-muted-foreground mt-1">Here&apos;s your business at a glance</p>
         </div>
@@ -186,46 +154,57 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {proposals.map((proposal) => (
-              <Card
-                key={proposal.id}
-                className="p-4 border border-border shadow-sm active:bg-muted/50 transition-colors cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {proposal.customer}
-                      </h3>
-                      <span
-                        className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusStyle(
-                          proposal.status
-                        )}`}
-                      >
-                        {proposal.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate mb-2">
-                      {proposal.address}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {proposal.service}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {proposal.date}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xl font-bold text-foreground">
-                      {formatCurrency(proposal.amount)}
-                    </span>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            {proposals.length === 0 ? (
+          <Card className="p-12 text-center">
+            <div className="text-muted-foreground mb-4">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-1">No proposals yet</h3>
+              <p className="text-sm">Create your first proposal to get started</p>
+            </div>
+            <Button 
+              onClick={() => router.push('/proposals/new')}
+              className="mt-4"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Proposal
+            </Button>
+          </Card>
+        ) : (
+          proposals.map((proposal) => (
+            <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-foreground text-lg">{proposal.customer}</h3>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>{proposal.address}</span>
                   </div>
                 </div>
-              </Card>
-            ))}
+                <Badge variant={proposal.status === "Accepted" ? "default" : proposal.status === "Sent" ? "secondary" : "outline"}>
+                  {proposal.status}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-md">
+                  <span className="font-medium">{proposal.service}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{proposal.date}</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xl font-bold text-foreground">{proposal.amount}</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </Card>
+          ))
+        )}
           </div>
         </section>
       </main>
