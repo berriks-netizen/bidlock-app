@@ -30,10 +30,10 @@ const stats = [
 const proposals: any[] = []
 
 const navItems = [
-  { icon: Home, label: "Home", active: true },
-  { icon: FileText, label: "Proposals", active: false },
-  { icon: Users, label: "Customers", active: false },
-  { icon: Settings, label: "Settings", active: false },
+  { icon: Home, label: "Home", active: true, path: "/dashboard" },
+  { icon: FileText, label: "Proposals", active: false, path: "/proposals" },
+  { icon: Users, label: "Customers", active: false, path: "/customers" },
+  { icon: Settings, label: "Settings", active: false, path: "/settings" },
 ];
 
 function getStatusStyle(status: string) {
@@ -137,6 +137,7 @@ export default function DashboardPage() {
 
         {/* New Proposal CTA */}
         <Button
+          onClick={() => router.push('/proposals/new')}
           className="w-full h-[60px] text-lg font-semibold gap-2 shadow-lg"
           size="lg"
         >
@@ -148,7 +149,12 @@ export default function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-foreground">Recent Proposals</h2>
-            <Button variant="ghost" size="sm" className="text-primary text-sm font-medium">
+            <Button 
+              onClick={() => router.push('/proposals')}
+              variant="ghost" 
+              size="sm" 
+              className="text-primary text-sm font-medium"
+            >
               View All
             </Button>
           </div>
@@ -218,7 +224,10 @@ export default function DashboardPage() {
             return (
               <button
                 key={item.label}
-                onClick={() => setActiveNav(item.label)}
+                onClick={() => {
+                  setActiveNav(item.label)
+                  router.push(item.path)
+                }}
                 className={`flex flex-col items-center justify-center py-2 px-4 min-w-[64px] min-h-[56px] rounded-xl transition-colors ${
                   isActive
                     ? "text-primary bg-primary/10"
