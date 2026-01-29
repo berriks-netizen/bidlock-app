@@ -1,26 +1,30 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Menu,
-  Bell,
-  Plus,
-  Home,
-  FileText,
-  Users,
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { 
+  Bell, 
+  Menu, 
+  Plus, 
+  MapPin, 
+  DollarSign, 
+  Clock, 
+  Home, 
+  FileText, 
+  Users, 
   Settings,
-  ChevronRight,
-} from "lucide-react";
+  ChevronRight 
+} from "lucide-react"
 
 const stats = [
   { label: "Sent", value: "5", color: "bg-primary/10 text-primary" },
   { label: "Pending", value: "$24,500", color: "bg-secondary/10 text-secondary" },
   { label: "Accepted", value: "3", color: "bg-emerald-500/10 text-emerald-600" },
-];
+]
 
 const proposals = [
   {
