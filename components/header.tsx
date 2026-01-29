@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 
 interface HeaderProps {
   onCtaClick: () => void
+  onSignInClick?: () => void
 }
 
-export function Header({ onCtaClick }: HeaderProps) {
+export function Header({ onCtaClick, onSignInClick }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -22,12 +23,21 @@ export function Header({ onCtaClick }: HeaderProps) {
           <span className="font-bold text-xl text-foreground">BidLock</span>
         </div>
         
-        <Button 
-          onClick={onCtaClick}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 py-2.5 rounded-lg text-sm"
-        >
-          Start Free Trial
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={onSignInClick || onCtaClick}
+            variant="ghost"
+            className="text-foreground font-medium"
+          >
+            Sign In
+          </Button>
+          <Button 
+            onClick={onCtaClick}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 py-2.5 rounded-lg text-sm"
+          >
+            Start Free Trial
+          </Button>
+        </div>
       </div>
     </header>
   )
