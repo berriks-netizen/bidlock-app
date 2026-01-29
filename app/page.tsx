@@ -14,10 +14,20 @@ import { Footer } from "@/components/footer"
 
 export default function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <Header onCtaClick={() => setIsModalOpen(true)} />
+      <Header 
+        onCtaClick={() => {
+          setShowSignIn(false)
+          setIsModalOpen(true)
+        }}
+        onSignInClick={() => {
+          setShowSignIn(true)
+          setIsModalOpen(true)
+        }}
+      />
       
       <main>
         <Hero onCtaClick={() => setIsModalOpen(true)} />
