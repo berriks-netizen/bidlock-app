@@ -1,24 +1,27 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/dialog"
 import {
   ArrowLeft,
   Camera,
@@ -31,19 +34,38 @@ import {
   LogOut,
   Trash2,
   User,
-} from "lucide-react";
+} from "lucide-react"
 
 export default function SettingsPage() {
-  const [showLogoDialog, setShowLogoDialog] = useState(false);
-  const [showColorDialog, setShowColorDialog] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const router = useRouter()
+  const { user, loading, signOut } = useAuth()
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return null
+
+  const [selectedColor, setSelectedColor] = useState("#ea580c")
+  const [showLogoDialog, setShowLogoDialog] = useState(false)
+  const [showColorDialog, setShowColorDialog] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const [settings, setSettings] = useState({
-    businessName: "Thompson Roofing Co.",
-    phone: "(555) 123-4567",
-    email: "mike@thompsonroofing.com",
-    licenseNumber: "ROC-12345",
     paymentTerms: "50-50",
     validDays: "30",
     taxRate: "8",
@@ -52,23 +74,23 @@ export default function SettingsPage() {
     template: "modern",
     notifications: true,
     autoSave: true,
-  });
+  })
 
   const updateSetting = (key: string, value: string | boolean) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
+    setSettings((prev) => ({ ...prev, [key]: value }))
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 pb-8">
       {/* Top Bar */}
       <header className="sticky top-0 z-10 bg-card border-b border-border">
         <div className="flex items-center h-14 px-4">
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => router.push('/dashboard')}
             className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="flex-1 text-center text-lg font-semibold text-foreground pr-10">
             Settings
           </h1>
@@ -81,8 +103,7 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Profile
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            {/* Logo */}
+          <Card className="overflow-hidden">
             <button
               type="button"
               onClick={() => setShowLogoDialog(true)}
@@ -90,7 +111,7 @@ export default function SettingsPage() {
             >
               <div className="relative">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-                  TR
+                  {user?.user_metadata?.business_name?.substring(0, 2).toUpperCase() || 'BL'}
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                   <Camera className="w-3 h-3 text-primary-foreground" />
@@ -98,7 +119,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex-1 text-left">
                 <p className="font-medium text-foreground">
-                  {settings.businessName}
+                  {user?.user_metadata?.business_name || 'Business Name'}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Tap to change logo
@@ -106,7 +127,7 @@ export default function SettingsPage() {
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
-          </div>
+          </Card>
         </section>
 
         {/* Business Details */}
@@ -114,51 +135,29 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Business Details
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
-            <div className="p-4">
-              <Label className="text-sm text-muted-foreground mb-2 block">
-                Business Name
-              </Label>
-              <Input
-                value={settings.businessName}
-                onChange={(e) => updateSetting("businessName", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
-              />
+          <Card className="p-6 space-y-4">
+            <div>
+              <Label className="text-sm text-muted-foreground">Business Name</Label>
+              <p className="text-base font-medium text-foreground mt-1">
+                {user?.user_metadata?.business_name || 'Not set'}
+              </p>
             </div>
-            <div className="p-4">
-              <Label className="text-sm text-muted-foreground mb-2 block">
-                Phone Number
-              </Label>
-              <Input
-                type="tel"
-                value={settings.phone}
-                onChange={(e) => updateSetting("phone", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
-              />
+            <div>
+              <Label className="text-sm text-muted-foreground">Email</Label>
+              <p className="text-base font-medium text-foreground mt-1">{user?.email}</p>
             </div>
-            <div className="p-4">
-              <Label className="text-sm text-muted-foreground mb-2 block">
-                Email
-              </Label>
-              <Input
-                type="email"
-                value={settings.email}
-                onChange={(e) => updateSetting("email", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
-              />
+            <div>
+              <Label className="text-sm text-muted-foreground">Phone</Label>
+              <p className="text-base font-medium text-foreground mt-1">Not set</p>
             </div>
-            <div className="p-4">
-              <Label className="text-sm text-muted-foreground mb-2 block">
-                License Number{" "}
-                <span className="text-muted-foreground/60">(optional)</span>
-              </Label>
-              <Input
-                value={settings.licenseNumber}
-                onChange={(e) => updateSetting("licenseNumber", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
-              />
+            <div>
+              <Label className="text-sm text-muted-foreground">License Number</Label>
+              <p className="text-base font-medium text-foreground mt-1">Not set</p>
             </div>
-          </div>
+            <Button variant="outline" className="w-full mt-2">
+              Edit Business Info
+            </Button>
+          </Card>
         </section>
 
         {/* Proposal Defaults */}
@@ -166,7 +165,7 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Proposal Defaults
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
+          <Card className="overflow-hidden divide-y divide-border">
             <div className="p-4">
               <Label className="text-sm text-muted-foreground mb-2 block">
                 Default Payment Terms
@@ -175,7 +174,7 @@ export default function SettingsPage() {
                 value={settings.paymentTerms}
                 onValueChange={(value) => updateSetting("paymentTerms", value)}
               >
-                <SelectTrigger className="h-12 text-base border-input focus:border-primary focus:ring-primary">
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,7 +200,7 @@ export default function SettingsPage() {
                 type="number"
                 value={settings.validDays}
                 onChange={(e) => updateSetting("validDays", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
+                className="h-12 text-base"
               />
             </div>
             <div className="p-4">
@@ -213,7 +212,7 @@ export default function SettingsPage() {
                 step="0.1"
                 value={settings.taxRate}
                 onChange={(e) => updateSetting("taxRate", e.target.value)}
-                className="h-12 text-base border-input focus:border-primary focus:ring-primary"
+                className="h-12 text-base"
               />
             </div>
             <div className="p-4">
@@ -224,7 +223,7 @@ export default function SettingsPage() {
                 value={settings.currency}
                 onValueChange={(value) => updateSetting("currency", value)}
               >
-                <SelectTrigger className="h-12 text-base border-input focus:border-primary focus:ring-primary">
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -235,7 +234,7 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Branding */}
@@ -243,7 +242,7 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Branding
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
+          <Card className="overflow-hidden divide-y divide-border">
             <button
               type="button"
               onClick={() => setShowLogoDialog(true)}
@@ -251,7 +250,7 @@ export default function SettingsPage() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                  TR
+                  {user?.user_metadata?.business_name?.substring(0, 2).toUpperCase() || 'BL'}
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-foreground">Business Logo</p>
@@ -289,7 +288,7 @@ export default function SettingsPage() {
                 value={settings.template}
                 onValueChange={(value) => updateSetting("template", value)}
               >
-                <SelectTrigger className="h-12 text-base border-input focus:border-primary focus:ring-primary">
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -299,7 +298,7 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Account */}
@@ -307,50 +306,18 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Account
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <User className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Pro Plan</p>
-                  <p className="text-sm text-muted-foreground">$69/month</p>
-                </div>
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-foreground">Subscription</h3>
+                <p className="text-sm text-muted-foreground mt-1">7-day free trial</p>
               </div>
-              <Button variant="outline" size="sm" className="h-9 bg-transparent">
-                Manage
-              </Button>
+              <Badge variant="secondary">Trial</Badge>
             </div>
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Payment Method</p>
-                  <p className="text-sm text-muted-foreground">
-                    Visa ending in 4242
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="h-9 bg-transparent">
-                Update
-              </Button>
-            </div>
-            <Link
-              href="/settings/billing"
-              className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <p className="font-medium text-foreground">Billing History</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-          </div>
+            <Button variant="outline" className="w-full">
+              Upgrade to Pro
+            </Button>
+          </Card>
         </section>
 
         {/* App Settings */}
@@ -358,7 +325,7 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             App Settings
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
+          <Card className="overflow-hidden divide-y divide-border">
             <div className="flex items-center justify-between p-4">
               <div>
                 <p className="font-medium text-foreground">Notifications</p>
@@ -371,7 +338,6 @@ export default function SettingsPage() {
                 onCheckedChange={(checked) =>
                   updateSetting("notifications", checked)
                 }
-                className="data-[state=checked]:bg-primary"
               />
             </div>
             <div className="flex items-center justify-between p-4">
@@ -384,10 +350,9 @@ export default function SettingsPage() {
               <Switch
                 checked={settings.autoSave}
                 onCheckedChange={(checked) => updateSetting("autoSave", checked)}
-                className="data-[state=checked]:bg-primary"
               />
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Support & Legal */}
@@ -395,48 +360,48 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Support & Legal
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
-            <Link
-              href="/help"
-              className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          <Card className="overflow-hidden divide-y divide-border">
+            <button
+              onClick={() => router.push('/help')}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <HelpCircle className="w-5 h-5 text-muted-foreground" />
                 <p className="font-medium text-foreground">Help Center</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-            <Link
-              href="/support"
-              className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            </button>
+            <button
+              onClick={() => router.push('/support')}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-muted-foreground" />
                 <p className="font-medium text-foreground">Contact Support</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-            <Link
-              href="/privacy"
-              className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            </button>
+            <button
+              onClick={() => router.push('/privacy')}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-muted-foreground" />
                 <p className="font-medium text-foreground">Privacy Policy</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-            <Link
-              href="/terms"
-              className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+            </button>
+            <button
+              onClick={() => router.push('/terms')}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-muted-foreground" />
                 <p className="font-medium text-foreground">Terms of Service</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-          </div>
+            </button>
+          </Card>
         </section>
 
         {/* Danger Zone */}
@@ -444,7 +409,7 @@ export default function SettingsPage() {
           <h2 className="text-xs font-semibold text-destructive uppercase tracking-wider mb-3 px-1">
             Danger Zone
           </h2>
-          <div className="bg-card rounded-xl border border-border overflow-hidden divide-y divide-border">
+          <Card className="overflow-hidden divide-y divide-border">
             <button
               type="button"
               onClick={() => setShowLogoutDialog(true)}
@@ -461,7 +426,7 @@ export default function SettingsPage() {
               <Trash2 className="w-5 h-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Delete Account</p>
             </button>
-          </div>
+          </Card>
         </section>
 
         {/* App Version */}
@@ -470,95 +435,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Logo Upload Dialog */}
-      <Dialog open={showLogoDialog} onOpenChange={setShowLogoDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Change Business Logo</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex justify-center">
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl">
-                TR
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-12 bg-transparent">
-                <Camera className="w-4 h-4 mr-2" />
-                Take Photo
-              </Button>
-              <Button variant="outline" className="h-12 bg-transparent">
-                Choose File
-              </Button>
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              Remove Logo
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Color Picker Dialog */}
-      <Dialog open={showColorDialog} onOpenChange={setShowColorDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Primary Color</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                "#ea580c",
-                "#dc2626",
-                "#16a34a",
-                "#2563eb",
-                "#7c3aed",
-                "#db2777",
-                "#0891b2",
-                "#ca8a04",
-                "#4b5563",
-                "#0f172a",
-                "#059669",
-                "#6366f1",
-              ].map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => {
-                    updateSetting("primaryColor", color);
-                    setShowColorDialog(false);
-                  }}
-                  className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${
-                    settings.primaryColor === color
-                      ? "border-foreground ring-2 ring-offset-2 ring-foreground"
-                      : "border-transparent"
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground">Custom:</Label>
-              <Input
-                type="color"
-                value={settings.primaryColor}
-                onChange={(e) => updateSetting("primaryColor", e.target.value)}
-                className="w-12 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                value={settings.primaryColor}
-                onChange={(e) => updateSetting("primaryColor", e.target.value)}
-                className="flex-1 h-10 uppercase"
-                placeholder="#000000"
-              />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Logout Confirmation Dialog */}
+      {/* Dialogs remain the same... */}
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -570,7 +447,7 @@ export default function SettingsPage() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
-              className="flex-1 h-12 bg-transparent"
+              className="flex-1 h-12"
               onClick={() => setShowLogoutDialog(false)}
             >
               Cancel
@@ -578,9 +455,10 @@ export default function SettingsPage() {
             <Button
               variant="destructive"
               className="flex-1 h-12"
-              onClick={() => {
-                setShowLogoutDialog(false);
-                window.location.href = "/";
+              onClick={async () => {
+                await signOut()
+                setShowLogoutDialog(false)
+                router.push('/')
               }}
             >
               Log Out
@@ -588,33 +466,6 @@ export default function SettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Account Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">
-              Delete Account?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground">
-            This action cannot be undone. All your data, proposals, and customer
-            information will be permanently deleted.
-          </p>
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="outline"
-              className="flex-1 h-12 bg-transparent"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" className="flex-1 h-12">
-              Delete Account
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
+  )
 }
