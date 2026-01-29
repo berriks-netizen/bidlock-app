@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react"
 import Image from "next/image"
@@ -29,7 +29,12 @@ export function SignupModal({ isOpen, onClose, defaultToSignIn = false }: Signup
     email: "",
     password: "",
   })
-
+  
+  useEffect(() => {
+    if (isOpen) {
+      setIsLogin(defaultToSignIn)
+    }
+  }, [isOpen, defaultToSignIn])
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
