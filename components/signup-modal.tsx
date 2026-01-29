@@ -12,12 +12,13 @@ import { useAuth } from "@/lib/auth-context"
 interface SignupModalProps {
   isOpen: boolean
   onClose: () => void
+  defaultToSignIn?: boolean
 }
 
-export function SignupModal({ isOpen, onClose }: SignupModalProps) {
+export function SignupModal({ isOpen, onClose, defaultToSignIn = false }: SignupModalProps) {
   const router = useRouter()
   const { signUp, signIn } = useAuth()
-  const [isLogin, setIsLogin] = useState(false)
+  const [isLogin, setIsLogin] = useState(defaultToSignIn)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
