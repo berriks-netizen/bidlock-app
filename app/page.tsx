@@ -41,7 +41,14 @@ export default function LandingPage() {
       
       <Footer />
       
-      <SignupModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <SignupModal 
+        isOpen={isModalOpen} 
+        onClose={() => {
+          setIsModalOpen(false)
+          setShowSignIn(false)
+        }}
+        defaultToSignIn={showSignIn}
+      />
     </div>
   )
 }
