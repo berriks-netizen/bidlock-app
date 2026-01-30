@@ -1,149 +1,162 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { ArrowLeft, Camera, ImageIcon, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-
-type UploadOption = "photo" | "upload" | "skip" | null;
-
-const uploadOptions = [
-  {
-    id: "photo" as const,
-    icon: Camera,
-    title: "Take Photo",
-    description: "Snap your business card or truck logo",
-  },
-  {
-    id: "upload" as const,
-    icon: ImageIcon,
-    title: "Upload Image",
-    description: "Choose from your photos",
-  },
-  {
-    id: "skip" as const,
-    icon: ArrowRight,
-    title: "Skip for Now",
-    description: "Use text-based header instead",
-  },
-];
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Camera, Upload, ArrowRight, Image as ImageIcon } from "lucide-react"
 
 export default function OnboardingStep1() {
-  const [selectedOption, setSelectedOption] = useState<UploadOption>(null);
+  const router = useRouter()
+  const { user, loading } = useAuth()
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return null
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setLogoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleContinue = () => {
+    // For now, just skip to next step
+    // We'll implement actual upload later
+    router.push('/onboarding/step-2')
+  }
+
+  const handleSkip = () => {
+    router.push('/onboarding/step-2')
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-4 safe-area-top">
-        <Link
-          href="/"
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors py-2 -ml-2 px-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm font-medium">Back</span>
-        </Link>
-        <div className="text-sm font-medium text-muted-foreground">
-          Step 1 of 3
+      <header className="px-4 py-6">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold">Set Up Your Business</h1>
+          <button 
+            onClick={handleSkip}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Skip
+          </button>
         </div>
-        <div className="w-16" /> {/* Spacer for centering */}
+        
+        {/* Progress */}
+        <div className="flex gap-2">
+          <div className="h-1 flex-1 bg-primary rounded-full" />
+          <div className="h-1 flex-1 bg-muted rounded-full" />
+          <div className="h-1 flex-1 bg-muted rounded-full" />
+        </div>
       </header>
 
-      {/* Progress Dots */}
-      <div className="flex items-center justify-center gap-2 px-4 pb-6">
-        <div className="w-8 h-2 rounded-full bg-primary" />
-        <div className="w-8 h-2 rounded-full bg-muted" />
-        <div className="w-8 h-2 rounded-full bg-muted" />
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-1 px-6 pb-8 flex flex-col">
-        {/* Heading Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-3 text-balance">
-            Add Your Business Logo
-          </h1>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            {"We'll add this to every proposal"}
-            <br />
-            <span className="text-sm">(takes 30 seconds)</span>
+      {/* Content */}
+      <main className="flex-1 px-4 py-8">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-xl font-semibold mb-2">Upload Your Logo</h2>
+          <p className="text-muted-foreground mb-8">
+            Add your business logo to make proposals look professional. You can always change this later.
           </p>
-        </div>
 
-        {/* Upload Options */}
-        <div className="flex flex-col gap-3 flex-1">
-          {uploadOptions.map((option) => {
-            const Icon = option.icon;
-            const isSelected = selectedOption === option.id;
+          {/* Logo Preview */}
+          <Card className="p-8 mb-6">
+            <div className="flex flex-col items-center">
+              {logoPreview ? (
+                <div className="w-32 h-32 rounded-lg overflow-hidden mb-4 border-2 border-border">
+                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center mb-4">
+                  <ImageIcon className="w-12 h-12 text-muted-foreground opacity-50" />
+                </div>
+              )}
+              
+              <div className="flex gap-3 w-full">
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button variant="outline" className="w-full" asChild>
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Choose File
+                    </span>
+                  </Button>
+                </label>
+                
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <Button variant="outline" className="w-full" asChild>
+                    <span>
+                      <Camera className="w-4 h-4 mr-2" />
+                      Take Photo
+                    </span>
+                  </Button>
+                </label>
+              </div>
+            </div>
+          </Card>
 
-            return (
-              <button
-                key={option.id}
-                onClick={() => setSelectedOption(option.id)}
-                className={`
-                  w-full min-h-[80px] p-5 rounded-2xl border-2 transition-all duration-200
-                  flex items-center gap-4 text-left
-                  ${
-                    isSelected
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
-                  }
-                `}
-              >
-                <div
-                  className={`
-                  w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors
-                  ${isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}
-                `}
-                >
-                  <Icon className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div
-                    className={`font-semibold text-base mb-0.5 ${isSelected ? "text-primary" : "text-foreground"}`}
-                  >
-                    {option.title}
-                  </div>
-                  <div className="text-sm text-muted-foreground leading-snug">
-                    {option.description}
-                  </div>
-                </div>
-                {/* Selection Indicator */}
-                <div
-                  className={`
-                  w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all
-                  ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}
-                `}
-                >
-                  {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="mt-8 pt-4">
-          <Button
-            size="lg"
-            disabled={!selectedOption}
-            className={`
-              w-full h-16 text-lg font-semibold rounded-2xl transition-all duration-200
-              ${
-                selectedOption
-                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }
-            `}
-          >
-            Continue
-          </Button>
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            You can always change this later in settings
+          <p className="text-sm text-muted-foreground text-center mb-8">
+            Recommended: Square image, at least 500x500px
           </p>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="px-4 py-6 border-t">
+        <div className="max-w-md mx-auto flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleSkip}
+            className="flex-1"
+          >
+            Skip for Now
+          </Button>
+          <Button 
+            onClick={handleContinue}
+            className="flex-1"
+          >
+            Continue
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </footer>
     </div>
-  );
+  )
 }
