@@ -74,7 +74,7 @@ export default function ReviewProposalPage() {
     );
   };
 
-  cconst handleSend = async () => {
+  const handleSend = async () => {
     setIsSending(true);
     
     try {
