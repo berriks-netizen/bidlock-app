@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,14 +74,49 @@ export default function ReviewProposalPage() {
     );
   };
 
-  const handleSend = async () => {
+  cconst handleSend = async () => {
     setIsSending(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSending(false);
-    setSent(true);
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 2000);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        alert('You must be logged in to send proposals')
+        return
+      }
+
+      // Save proposal to database
+      const { error } = await supabase
+        .from('proposals')
+        .insert({
+          user_id: user.id,
+          customer_name: "John & Sarah Martinez",
+          customer_address: "1847 Oak Valley Drive, Austin, TX 78745",
+          services: mockServices,
+          photos: mockPhotos,
+          subtotal: subtotal,
+          tax_rate: parseFloat(taxRate),
+          total: total,
+          status: 'sent',
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error saving proposal:', error)
+        alert('Failed to save proposal')
+        return
+      }
+
+      setSent(true)
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred')
+    } finally {
+      setIsSending(false)
+    }
   };
 
   const paymentTermsText: Record<string, string> = {
