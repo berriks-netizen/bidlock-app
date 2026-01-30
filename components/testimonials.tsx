@@ -14,23 +14,6 @@ export function Testimonials() {
             Trusted by contractors like you
           </h2>
         </div>
-        
-        
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-8">
-          <div className="text-center">
-            <p className="text-3xl md:text-4xl font-bold text-primary">200+</p>
-            <p className="text-sm text-muted-foreground">Contractors</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl md:text-4xl font-bold text-primary">15k+</p>
-            <p className="text-sm text-muted-foreground">Proposals Sent</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl md:text-4xl font-bold text-primary">$2.4M</p>
-            <p className="text-sm text-muted-foreground">Jobs Won</p>
-          </div>
-        </div>
       </div>
     </section>
   )
