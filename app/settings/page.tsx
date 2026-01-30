@@ -314,9 +314,15 @@ export default function SettingsPage() {
               </div>
               <Badge variant="secondary">Trial</Badge>
             </div>
-            <Button variant="outline" className="w-full">
-              Upgrade to Pro
-            </Button>
+            <Button 
+  variant="outline" 
+  className="w-full"
+  onClick={() => {
+    alert('Stripe integration coming soon! You\'ll be able to upgrade for $39/month.')
+  }}
+>
+  Upgrade to Pro
+</Button>
           </Card>
         </section>
 
