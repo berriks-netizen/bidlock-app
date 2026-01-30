@@ -13,7 +13,7 @@ export function Hero({ onCtaClick }: HeroProps) {
       <div className="container mx-auto max-w-4xl text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6">
           <CheckCircle className="w-4 h-4" />
-          Join 200+ contractors already using BidLock
+          Lock in More Wins Today!
         </div>
         
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 text-balance">
