@@ -99,24 +99,24 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button 
-  variant="ghost" 
-  size="icon" 
-  className="relative h-10 w-10"
-  onClick={() => {
-    // For now, just remove the notification dot
-    alert('No new notifications')
-  }}
->
-  <Bell className="h-5 w-5 text-muted-foreground" />
-  <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-</Button>
-  variant="ghost" 
-  size="icon" 
-  className="h-10 w-10"
-  onClick={() => router.push('/settings')}
->
-  <Menu className="h-5 w-5 text-muted-foreground" />
-</Button>
+              variant="ghost" 
+              size="icon" 
+              className="relative h-10 w-10"
+              onClick={() => {
+                alert('No new notifications')
+              }}
+            >
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-10 w-10"
+              onClick={() => router.push('/settings')}
+            >
+              <Menu className="h-5 h-5 text-muted-foreground" />
+            </Button>
           </div>
         </div>
       </header>
