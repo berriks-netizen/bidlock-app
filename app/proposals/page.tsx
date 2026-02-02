@@ -124,10 +124,10 @@ export default function ProposalsPage() {
               <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-foreground text-lg">{proposal.customer}</h3>
+                    <h3 className="font-semibold text-foreground text-lg">{proposal.customer_name}</h3>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>{proposal.address}</span>
+                      <span>{proposal.customer_address}</span>
                     </div>
                   </div>
                   <Badge>{proposal.status}</Badge>
@@ -135,20 +135,20 @@ export default function ProposalsPage() {
                 
                 <div className="flex items-center gap-4 text-sm mb-3">
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-md">
-                    <span className="font-medium">{proposal.service}</span>
+                    <span className="font-medium">{proposal.services?.length || 0} services</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{proposal.date}</span>
+                    <span>{new Date(proposal.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <div className="flex items-center gap-1.5">
                     <DollarSign className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xl font-bold text-foreground">{proposal.amount}</span>
+                    <span className="text-xl font-bold text-foreground">${proposal.total?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <ChevronRight className="w-5 w-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </Card>
             ))}
