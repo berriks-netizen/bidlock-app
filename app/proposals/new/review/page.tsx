@@ -57,13 +57,17 @@ export default function ReviewProposalPage() {
   const total = getTotal();
 
   const nextPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev + 1) % mockPhotos.length);
+    if (proposalData.photos.length > 0) {
+      setCurrentPhotoIndex((prev) => (prev + 1) % proposalData.photos.length);
+    }
   };
 
   const prevPhoto = () => {
-    setCurrentPhotoIndex(
-      (prev) => (prev - 1 + mockPhotos.length) % mockPhotos.length
-    );
+    if (proposalData.photos.length > 0) {
+      setCurrentPhotoIndex(
+        (prev) => (prev - 1 + proposalData.photos.length) % proposalData.photos.length
+      );
+    }
   };
 
   const handleSend = async () => {
@@ -77,15 +81,18 @@ export default function ReviewProposalPage() {
         return
       }
 
-      // Save proposal to database
+      // Save proposal to database with REAL data from context
       const { error } = await supabase
         .from('proposals')
         .insert({
           user_id: user.id,
-          customer_name: "John & Sarah Martinez",
-          customer_address: "1847 Oak Valley Drive, Austin, TX 78745",
-          services: mockServices,
-          photos: mockPhotos,
+          customer_name: proposalData.customerName,
+          customer_phone: proposalData.customerPhone,
+          customer_email: proposalData.customerEmail,
+          customer_address: proposalData.customerAddress,
+          property_type: proposalData.propertyType,
+          services: proposalData.services,
+          photos: proposalData.photos,
           subtotal: subtotal,
           tax_rate: parseFloat(taxRate),
           total: total,
@@ -101,6 +108,7 @@ export default function ReviewProposalPage() {
 
       setSent(true)
       setTimeout(() => {
+        resetProposal() // Clear the form data
         router.push('/dashboard')
       }, 2000)
     } catch (error) {
@@ -177,13 +185,13 @@ export default function ReviewProposalPage() {
                     Prepared for:
                   </p>
                   <p className="font-semibold text-foreground">
-                    John & Sarah Martinez
+                    {proposalData.customerName || 'Customer Name'}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    1847 Oak Valley Drive
-                    <br />
-                    Austin, TX 78745
-                  </p>
+                  {proposalData.customerAddress && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {proposalData.customerAddress}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground mb-1">Date:</p>
@@ -201,11 +209,17 @@ export default function ReviewProposalPage() {
               </h3>
               <div className="relative">
                 <div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={mockPhotos[currentPhotoIndex] || "/placeholder.svg"}
-                    alt={`Project photo ${currentPhotoIndex + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  {proposalData.photos.length > 0 ? (
+                    <img
+                      src={proposalData.photos[currentPhotoIndex]}
+                      alt={`Project photo ${currentPhotoIndex + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      No photos added
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={prevPhoto}
@@ -224,7 +238,7 @@ export default function ReviewProposalPage() {
               </div>
               {/* Dots Indicator */}
               <div className="flex justify-center gap-1.5 mt-3">
-                {mockPhotos.map((_, idx) => (
+                {proposalData.photos.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentPhotoIndex(idx)}
@@ -243,7 +257,7 @@ export default function ReviewProposalPage() {
             <div className="p-6 border-b border-border">
               <h3 className="font-semibold text-foreground mb-4">Services</h3>
               <div className="space-y-3">
-                {mockServices.map((service, idx) => (
+                {proposalData.services.map((service, idx) => (
                   <div
                     key={idx}
                     className="flex justify-between items-center py-2 border-b border-border/50 last:border-0"
