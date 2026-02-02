@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -18,8 +19,6 @@ import {
   Settings
 } from "lucide-react"
 
-const customers: any[] = []
-
 const navItems = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: FileText, label: "Proposals", path: "/proposals" },
@@ -31,12 +30,53 @@ export default function CustomersPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const [activeNav, setActiveNav] = useState("Customers")
+  const [customers, setCustomers] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/')
     }
+    
+    // Fetch customers from proposals
+    if (user) {
+      fetchCustomers()
+    }
   }, [user, loading, router])
+
+  const fetchCustomers = async () => {
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('customer_name, customer_address, customer_phone, customer_email')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching customers:', error)
+      return
+    }
+
+    // Group by customer name and count proposals
+    const customerMap = new Map()
+    data?.forEach(proposal => {
+      const existing = customerMap.get(proposal.customer_name)
+      if (existing) {
+        existing.proposalCount++
+      } else {
+        customerMap.set(proposal.customer_name, {
+          id: proposal.customer_name,
+          name: proposal.customer_name,
+          address: proposal.customer_address,
+          phone: proposal.customer_phone,
+          email: proposal.customer_email,
+          proposalCount: 1
+        })
+      }
+    })
+
+    setCustomers(Array.from(customerMap.values()))
+  }
 
   if (loading) {
     return (
