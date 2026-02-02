@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { useProposal } from "@/lib/proposal-context";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -30,20 +32,10 @@ import {
   Check,
 } from "lucide-react";
 
-const mockPhotos = [
-  "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
-];
-
-const mockServices = [
-  { name: "Roof Inspection", price: 150 },
-  { name: "Shingle Replacement (20 sq ft)", price: 1850 },
-  { name: "Gutter Cleaning & Repair", price: 450 },
-];
-
 export default function ReviewProposalPage() {
   const router = useRouter();
+  const { proposalData, updateReviewSettings, resetProposal, getSubtotal, getTotal } = useProposal();
+  const { user } = useAuth();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [taxRate, setTaxRate] = useState("8");
   const [paymentTerms, setPaymentTerms] = useState("50-50");
@@ -60,9 +52,9 @@ export default function ReviewProposalPage() {
   const [editingTerms, setEditingTerms] = useState(false);
   const [editingValid, setEditingValid] = useState(false);
 
-  const subtotal = mockServices.reduce((sum, s) => sum + s.price, 0);
+  const subtotal = getSubtotal();
   const tax = subtotal * (parseFloat(taxRate) / 100);
-  const total = subtotal + tax;
+  const total = getTotal();
 
   const nextPhoto = () => {
     setCurrentPhotoIndex((prev) => (prev + 1) % mockPhotos.length);
