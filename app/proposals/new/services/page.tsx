@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useProposal } from "@/lib/proposal-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +12,7 @@ import {
   Plus,
   Check,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,6 +26,7 @@ import { Label } from "@/components/ui/label";
 interface Service {
   id: string;
   name: string;
+  description?: string;
   price: number;
   selected: boolean;
 }
@@ -40,6 +43,7 @@ const initialServices: Service[] = [
 
 export default function ServicesPage() {
   const router = useRouter();
+  const { proposalData, updateServices, getSubtotal } = useProposal();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [searchQuery, setSearchQuery] = useState("");
   const [customServiceName, setCustomServiceName] = useState("");
@@ -47,6 +51,32 @@ export default function ServicesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingPrice, setEditingPrice] = useState("");
+
+  // Load existing services from context on mount
+  useEffect(() => {
+    if (proposalData.services.length > 0) {
+      const existingServiceNames = proposalData.services.map(s => s.name);
+      
+      // Mark pre-existing services as selected
+      const updatedServices = services.map(s => ({
+        ...s,
+        selected: existingServiceNames.includes(s.name)
+      }));
+      
+      // Add custom services from context
+      const customServices = proposalData.services
+        .filter(s => !initialServices.find(init => init.name === s.name))
+        .map((s, index) => ({
+          id: `custom-loaded-${index}`,
+          name: s.name,
+          description: s.description,
+          price: s.price,
+          selected: true
+        }));
+      
+      setServices([...updatedServices, ...customServices]);
+    }
+  }, []);
 
   const filteredServices = useMemo(() => {
     if (!searchQuery.trim()) return services;
@@ -82,6 +112,11 @@ export default function ServicesPage() {
     }
   };
 
+  const removeService = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setServices((prev) => prev.filter(s => s.id !== id));
+  };
+
   const addCustomService = () => {
     if (customServiceName.trim()) {
       const newService: Service = {
@@ -95,6 +130,18 @@ export default function ServicesPage() {
       setCustomServicePrice("");
       setIsDialogOpen(false);
     }
+  };
+
+  const handleContinue = () => {
+    // Save selected services to context
+    const servicesToSave = selectedServices.map(s => ({
+      name: s.name,
+      description: s.description,
+      price: s.price
+    }));
+    
+    updateServices(servicesToSave);
+    router.push("/proposals/new/review");
   };
 
   const formatCurrency = (amount: number) => {
@@ -220,18 +267,30 @@ export default function ServicesPage() {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePriceEdit(service.id, service.price);
-                  }}
-                  className={`flex items-center gap-1 font-semibold text-lg ${
-                    service.selected ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {formatCurrency(service.price)}
-                  <Pencil className="w-3.5 h-3.5 opacity-50" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePriceEdit(service.id, service.price);
+                    }}
+                    className={`flex items-center gap-1 font-semibold text-lg ${
+                      service.selected ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {formatCurrency(service.price)}
+                    <Pencil className="w-3.5 h-3.5 opacity-50" />
+                  </button>
+                  
+                  {/* Delete button for custom services */}
+                  {service.id.startsWith('custom') && (
+                    <button
+                      onClick={(e) => removeService(service.id, e)}
+                      className="p-1 text-destructive hover:bg-destructive/10 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ))}
@@ -307,13 +366,10 @@ export default function ServicesPage() {
             <span className="text-2xl font-bold text-primary">
               {formatCurrency(subtotal)}
             </span>
-            <button className="text-sm text-muted-foreground underline hover:text-foreground transition-colors">
-              Edit Total
-            </button>
           </div>
         </div>
         <Button
-          onClick={() => router.push("/proposals/new/review")}
+          onClick={handleContinue}
           disabled={selectedServices.length === 0}
           className="w-full h-[60px] text-lg font-semibold rounded-xl"
         >
