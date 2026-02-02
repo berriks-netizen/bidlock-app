@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
@@ -27,7 +28,7 @@ const stats = [
   { label: "Accepted", value: "0", color: "bg-emerald-500/10 text-emerald-600" },
 ]
 
-const proposals: any[] = []
+const [proposals, setProposals] = useState<any[]>([])
 
 const navItems = [
   { icon: Home, label: "Home", active: true, path: "/dashboard" },
@@ -67,7 +68,30 @@ export default function DashboardPage() {
     if (!loading && !user) {
       router.push('/')
     }
+    
+    // Fetch proposals from database
+    if (user) {
+      fetchProposals()
+    }
   }, [user, loading, router])
+
+  const fetchProposals = async () => {
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (error) {
+      console.error('Error fetching proposals:', error)
+      return
+    }
+
+    setProposals(data || [])
+  }
 
   if (loading) {
     return (
@@ -188,14 +212,16 @@ export default function DashboardPage() {
             </Button>
           </Card>
         ) : (
-          proposals.map((proposal) => (
-            <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-foreground text-lg">{proposal.customer}</h3>
+        
+          {proposals.map((proposal) => (
+          <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-foreground text-lg">{proposal.customer_name}</h3>
+
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    <span>{proposal.address}</span>
+                    <span>{proposal.customer_address}</span>
                   </div>
                 </div>
                 <Badge variant={proposal.status === "Accepted" ? "default" : proposal.status === "Sent" ? "secondary" : "outline"}>
@@ -205,18 +231,18 @@ export default function DashboardPage() {
               
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-md">
-                  <span className="font-medium">{proposal.service}</span>
+                  <span className="font-medium">{proposal.services?.length || 0} services</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>{proposal.date}</span>
+                  <span>{new Date(proposal.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
               
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                 <div className="flex items-center gap-1.5">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xl font-bold text-foreground">{proposal.amount}</span>
+                  <span className="text-xl font-bold text-foreground">${proposal.total?.toFixed(2) || '0.00'}</span>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
