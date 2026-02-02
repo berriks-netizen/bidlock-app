@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
@@ -20,8 +21,6 @@ import {
   ChevronRight
 } from "lucide-react"
 
-const proposals: any[] = []
-
 const navItems = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: FileText, label: "Proposals", path: "/proposals" },
@@ -33,12 +32,35 @@ export default function ProposalsPage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const [activeNav, setActiveNav] = useState("Proposals")
+  const [proposals, setProposals] = useState<any[]>([])
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/')
     }
+    
+    // Fetch proposals from database
+    if (user) {
+      fetchProposals()
+    }
   }, [user, loading, router])
+
+  const fetchProposals = async () => {
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching proposals:', error)
+      return
+    }
+
+    setProposals(data || [])
+  }
 
   if (loading) {
     return (
