@@ -28,8 +28,6 @@ const stats = [
   { label: "Accepted", value: "0", color: "bg-emerald-500/10 text-emerald-600" },
 ]
 
-const [proposals, setProposals] = useState<any[]>([])
-
 const navItems = [
   { icon: Home, label: "Home", active: true, path: "/dashboard" },
   { icon: FileText, label: "Proposals", active: false, path: "/proposals" },
@@ -61,6 +59,7 @@ function formatCurrency(amount: number) {
 
 export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState("Home");
+  const [proposals, setProposals] = useState<any[]>([])
   const router = useRouter()
   const { user, loading } = useAuth()
 
