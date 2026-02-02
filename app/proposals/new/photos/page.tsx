@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react"
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useProposal } from "@/lib/proposal-context";
 import { Button } from "@/components/ui/button";
 import {
   X,
@@ -11,7 +11,6 @@ import {
   Camera,
   ImageIcon,
   Plus,
-  Trash2,
 } from "lucide-react";
 
 interface UploadedPhoto {
@@ -22,6 +21,7 @@ interface UploadedPhoto {
 
 export default function PhotoUploadPage() {
   const router = useRouter();
+  const { proposalData, addPhoto, removePhoto: removePhotoFromContext } = useProposal();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
@@ -29,6 +29,18 @@ export default function PhotoUploadPage() {
 
   const maxPhotos = 10;
   const maxFileSize = 5 * 1024 * 1024; // 5MB
+
+  // Load existing photos from context on mount
+  useEffect(() => {
+    if (proposalData.photos.length > 0) {
+      const loadedPhotos = proposalData.photos.map((url, index) => ({
+        id: `photo-${index}`,
+        url,
+        name: `Photo ${index + 1}`
+      }));
+      setPhotos(loadedPhotos);
+    }
+  }, []);
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -40,16 +52,23 @@ export default function PhotoUploadPage() {
       .slice(0, remainingSlots)
       .forEach((file) => {
         if (file.size <= maxFileSize && file.type.startsWith("image/")) {
-          const url = URL.createObjectURL(file);
-          newPhotos.push({
-            id: `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            url,
-            name: file.name,
-          });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            const photoId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            const newPhoto = {
+              id: photoId,
+              url: base64,
+              name: file.name,
+            };
+            
+            setPhotos((prev) => [...prev, newPhoto]);
+            addPhoto(base64); // Save to context
+          };
+          reader.readAsDataURL(file);
         }
       });
-
-    setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -68,13 +87,11 @@ export default function PhotoUploadPage() {
   };
 
   const removePhoto = (id: string) => {
-    setPhotos((prev) => {
-      const photo = prev.find((p) => p.id === id);
-      if (photo) {
-        URL.revokeObjectURL(photo.url);
-      }
-      return prev.filter((p) => p.id !== id);
-    });
+    const photoIndex = photos.findIndex(p => p.id === id);
+    if (photoIndex !== -1) {
+      setPhotos((prev) => prev.filter((p) => p.id !== id));
+      removePhotoFromContext(photoIndex); // Remove from context
+    }
   };
 
   const triggerFileInput = () => {
@@ -83,6 +100,10 @@ export default function PhotoUploadPage() {
 
   const triggerCameraInput = () => {
     cameraInputRef.current?.click();
+  };
+
+  const handleContinue = () => {
+    router.push("/proposals/new/services");
   };
 
   return (
@@ -255,13 +276,13 @@ export default function PhotoUploadPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 pb-6">
         <div className="flex items-center justify-between gap-4">
           <button
-            onClick={() => router.push("/proposals/new/services")}
+            onClick={handleContinue}
             className="text-muted-foreground hover:text-foreground transition-colors font-medium py-3 px-4"
           >
             Skip Photos
           </button>
           <Button
-            onClick={() => router.push("/proposals/new/services")}
+            onClick={handleContinue}
             disabled={photos.length === 0}
             className="flex-1 h-[60px] text-lg font-semibold bg-primary hover:bg-primary/90 disabled:opacity-50"
           >
