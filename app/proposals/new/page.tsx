@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useProposal } from "@/lib/proposal-context";
 import { X, MapPin, ChevronDown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,13 +14,16 @@ const existingCustomers = [
 
 export default function NewProposalPage() {
   const router = useRouter();
+  const { proposalData, updateCustomerInfo } = useProposal();
+  
   const [formData, setFormData] = useState({
-    customerName: "",
-    phone: "",
-    email: "",
-    address: "",
-    propertyType: "",
+    customerName: proposalData.customerName || "",
+    phone: proposalData.customerPhone || "",
+    email: proposalData.customerEmail || "",
+    address: proposalData.customerAddress || "",
+    propertyType: proposalData.propertyType || "",
   });
+  
   const [suggestions, setSuggestions] = useState<typeof existingCustomers>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -51,6 +55,19 @@ export default function NewProposalPage() {
 
   const handleClose = () => {
     router.push("/dashboard");
+  };
+
+  const handleNext = () => {
+    // Save to context before navigating
+    updateCustomerInfo({
+      customerName: formData.customerName,
+      customerPhone: formData.phone,
+      customerEmail: formData.email,
+      customerAddress: formData.address,
+      propertyType: formData.propertyType,
+    });
+    
+    router.push("/proposals/new/photos");
   };
 
   return (
@@ -265,7 +282,7 @@ export default function NewProposalPage() {
       {/* Bottom CTA */}
       <div className="sticky bottom-0 px-4 py-4 bg-card border-t border-border">
         <Button
-          onClick={() => router.push("/proposals/new/photos")}
+          onClick={handleNext}
           disabled={!isValid}
           className="w-full h-[60px] text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
