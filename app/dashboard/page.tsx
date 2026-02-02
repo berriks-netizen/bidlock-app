@@ -211,8 +211,7 @@ export default function DashboardPage() {
             </Button>
           </Card>
         ) : (
-        
-          {proposals.map((proposal) => (
+          proposals.map((proposal) => (
           <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <div>
