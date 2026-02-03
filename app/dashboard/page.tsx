@@ -22,12 +22,6 @@ import {
   ChevronRight 
 } from "lucide-react"
 
-const stats = [
-  { label: "Sent", value: "0", color: "bg-primary/10 text-primary" },
-  { label: "Pending", value: "$0", color: "bg-secondary/10 text-secondary" },
-  { label: "Accepted", value: "0", color: "bg-emerald-500/10 text-emerald-600" },
-]
-
 const navItems = [
   { icon: Home, label: "Home", active: true, path: "/dashboard" },
   { icon: FileText, label: "Proposals", active: false, path: "/proposals" },
