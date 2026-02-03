@@ -119,6 +119,54 @@ export default function ReviewProposalPage() {
     }
   };
 
+  const handleSaveAsDraft = async () => {
+    setIsSending(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        alert('You must be logged in to save proposals')
+        return
+      }
+
+      // Save proposal to database as DRAFT
+      const { error } = await supabase
+        .from('proposals')
+        .insert({
+          user_id: user.id,
+          customer_name: proposalData.customerName,
+          customer_phone: proposalData.customerPhone,
+          customer_email: proposalData.customerEmail,
+          customer_address: proposalData.customerAddress,
+          property_type: proposalData.propertyType,
+          services: proposalData.services,
+          photos: proposalData.photos,
+          subtotal: subtotal,
+          tax_rate: parseFloat(taxRate),
+          total: total,
+          status: 'draft', // Different from handleSend!
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error saving draft:', error)
+        alert('Failed to save draft')
+        return
+      }
+
+      // Show success and redirect
+      alert('Draft saved successfully!')
+      resetProposal()
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred')
+    } finally {
+      setIsSending(false)
+    }
+  };
+
   const paymentTermsText: Record<string, string> = {
     "50-50": "50% upfront, 50% on completion",
     "full-upfront": "100% upfront",
@@ -345,9 +393,10 @@ export default function ReviewProposalPage() {
           <Button
             variant="outline"
             className="flex-1 h-14 text-base font-medium border-2 bg-transparent"
-            onClick={() => router.push("/dashboard")}
+            onClick={handleSaveAsDraft}
+            disabled={isSending}
           >
-            Save as Draft
+            {isSending ? 'Saving...' : 'Save as Draft'}
           </Button>
           <Button
             className="flex-1 h-14 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
