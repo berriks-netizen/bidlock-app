@@ -70,6 +70,9 @@ export default function SettingsPage() {
   const [editPhone, setEditPhone] = useState('')
   const [editLicense, setEditLicense] = useState('')
   const [isSavingBusiness, setIsSavingBusiness] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
 
   const handleSaveBusinessInfo = async () => {
     setIsSavingBusiness(true)
@@ -109,6 +112,64 @@ export default function SettingsPage() {
     }
   }
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  const handleSaveLogo = async () => {
+    if (!logoFile || !user) return
+
+    setIsUploadingLogo(true)
+
+    try {
+      const fileExt = logoFile.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, logoFile, { upsert: true })
+
+      if (uploadError) {
+        alert('Failed to upload logo')
+        return
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath)
+
+      // Save to profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          logo_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+
+      if (profileError) {
+        alert('Failed to save logo URL')
+        return
+      }
+
+      alert('Logo uploaded successfully!')
+      setShowLogoDialog(false)
+      window.location.reload()
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred')
+    } finally {
+      setIsUploadingLogo(false)
+    }
+  }
+  
   const [settings, setSettings] = useState({
     paymentTerms: "50-50",
     validDays: "30",
@@ -563,6 +624,50 @@ export default function SettingsPage() {
               className="w-full h-14 text-base font-semibold mt-2"
             >
               {isSavingBusiness ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Logo Upload Dialog */}
+      <Dialog open={showLogoDialog} onOpenChange={setShowLogoDialog}>
+        <DialogContent className="mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Upload Business Logo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="flex flex-col items-center">
+              {logoPreview ? (
+                <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-border mb-4">
+                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center mb-4">
+                  <Camera className="w-12 h-12 text-muted-foreground opacity-50" />
+                </div>
+              )}
+              
+              <label className="w-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <Button variant="outline" className="w-full" asChild>
+                  <span>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Choose Logo
+                  </span>
+                </Button>
+              </label>
+            </div>
+
+            <Button
+              onClick={handleSaveLogo}
+              disabled={!logoFile || isUploadingLogo}
+              className="w-full h-14 text-base font-semibold"
+            >
+              {isUploadingLogo ? 'Uploading...' : 'Save Logo'}
             </Button>
           </div>
         </DialogContent>
