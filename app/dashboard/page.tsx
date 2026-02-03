@@ -60,6 +60,11 @@ function formatCurrency(amount: number) {
 export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState("Home");
   const [proposals, setProposals] = useState<any[]>([])
+  const [stats, setStats] = useState([
+    { label: "Sent", value: "0", color: "bg-primary/10 text-primary" },
+    { label: "Pending", value: "$0", color: "bg-secondary/10 text-secondary" },
+    { label: "Accepted", value: "0", color: "bg-emerald-500/10 text-emerald-600" },
+  ])
   const router = useRouter()
   const { user, loading } = useAuth()
 
@@ -90,6 +95,20 @@ export default function DashboardPage() {
     }
 
     setProposals(data || [])
+    
+    // Calculate stats
+    const allProposals = data || []
+    const sentCount = allProposals.filter(p => p.status === 'sent').length
+    const pendingTotal = allProposals
+      .filter(p => p.status === 'sent')
+      .reduce((sum, p) => sum + (p.total || 0), 0)
+    const acceptedCount = allProposals.filter(p => p.status === 'accepted').length
+    
+    setStats([
+      { label: "Sent", value: sentCount.toString(), color: "bg-primary/10 text-primary" },
+      { label: "Pending", value: `$${Math.round(pendingTotal)}`, color: "bg-secondary/10 text-secondary" },
+      { label: "Accepted", value: acceptedCount.toString(), color: "bg-emerald-500/10 text-emerald-600" },
+    ])
   }
 
   if (loading) {
