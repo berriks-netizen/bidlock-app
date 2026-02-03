@@ -182,12 +182,11 @@ export default function CustomersPage() {
         <div className="flex items-center justify-around max-w-md mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeNav === item.label
+            const isActive = item.path === '/customers'; // Always active on customers page
             return (
               <button
                 key={item.label}
                 onClick={() => {
-                  setActiveNav(item.label)
                   router.push(item.path)
                 }}
                 className={`flex flex-col items-center justify-center py-2 px-4 min-w-[64px] min-h-[56px] rounded-xl transition-colors ${
