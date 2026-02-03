@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -44,6 +50,137 @@ export default function ProposalsPage() {
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent')
   const [showFilterDialog, setShowFilterDialog] = useState(false)
   const [dateRange, setDateRange] = useState<'all' | '7days' | '30days' | '90days'>('all')
+  const [isExporting, setIsExporting] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+
+  const exportToCSV = () => {
+    // Filter only sent/accepted proposals
+    const exportData = proposals.filter(p => p.status === 'sent' || p.status === 'accepted')
+    
+    if (exportData.length === 0) {
+      alert('No proposals to export')
+      return
+    }
+
+    // Create CSV content
+    const headers = ['Date', 'Customer', 'Address', 'Phone', 'Email', 'Services', 'Subtotal', 'Tax', 'Total', 'Status']
+    const rows = exportData.map(p => [
+      new Date(p.created_at).toLocaleDateString(),
+      p.customer_name || '',
+      p.customer_address || '',
+      p.customer_phone || '',
+      p.customer_email || '',
+      p.services?.length || 0,
+      p.subtotal?.toFixed(2) || '0.00',
+      ((p.subtotal * p.tax_rate) / 100).toFixed(2),
+      p.total?.toFixed(2) || '0.00',
+      p.status
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `bidlock-proposals-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    
+    setShowExportDialog(false)
+  }
+
+  const exportToPDF = async () => {
+    setIsExporting(true)
+    
+    try {
+      // Filter only sent/accepted proposals
+      const exportData = proposals.filter(p => p.status === 'sent' || p.status === 'accepted')
+      
+      if (exportData.length === 0) {
+        alert('No proposals to export')
+        setIsExporting(false)
+        return
+      }
+
+      // Create simple HTML report
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { color: #ea580c; margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f3f4f6; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .total-row { font-weight: bold; background-color: #fef3c7 !important; }
+          </style>
+        </head>
+        <body>
+          <h1>BidLock Proposals Report</h1>
+          <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Total Proposals:</strong> ${exportData.length}</p>
+          <p><strong>Total Value:</strong> $${exportData.reduce((sum, p) => sum + (p.total || 0), 0).toFixed(2)}</p>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Services</th>
+                <th>Subtotal</th>
+                <th>Tax</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${exportData.map(p => `
+                <tr>
+                  <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                  <td>${p.customer_name || ''}</td>
+                  <td>${p.services?.length || 0}</td>
+                  <td>$${p.subtotal?.toFixed(2) || '0.00'}</td>
+                  <td>$${((p.subtotal * p.tax_rate) / 100).toFixed(2)}</td>
+                  <td>$${p.total?.toFixed(2) || '0.00'}</td>
+                  <td>${p.status}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="5" style="text-align: right;">GRAND TOTAL:</td>
+                <td>$${exportData.reduce((sum, p) => sum + (p.total || 0), 0).toFixed(2)}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `
+
+      // Create blob and download
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `bidlock-proposals-${new Date().toISOString().split('T')[0]}.html`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      
+      alert('HTML report downloaded! Open it in your browser and print to PDF (Ctrl+P or Cmd+P)')
+      setShowExportDialog(false)
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Failed to export')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -154,14 +291,23 @@ export default function ProposalsPage() {
             </Button>
             <h1 className="text-xl font-bold">All Proposals</h1>
           </div>
-          <Button 
-            onClick={() => router.push('/proposals/new')}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExportDialog(true)}
+            >
+              Export
+            </Button>
+            <Button 
+              onClick={() => router.push('/proposals/new')}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              New
+            </Button>
+          </div>
         </div>
         
         {/* Filters */}
@@ -278,6 +424,34 @@ export default function ProposalsPage() {
           })}
         </div>
       </nav>
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Proposals</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground pt-2">
+            Export all sent and accepted proposals for tax purposes
+          </p>
+          <div className="space-y-3 pt-4">
+            <Button
+              variant="outline"
+              className="w-full h-14 text-base font-semibold"
+              onClick={exportToCSV}
+            >
+              Export to CSV (Excel)
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-14 text-base font-semibold"
+              onClick={exportToPDF}
+              disabled={isExporting}
+            >
+              {isExporting ? 'Generating...' : 'Export to PDF'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
