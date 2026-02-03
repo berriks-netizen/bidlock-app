@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -64,6 +65,49 @@ export default function SettingsPage() {
   const [showColorDialog, setShowColorDialog] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showEditBusinessDialog, setShowEditBusinessDialog] = useState(false)
+  const [editBusinessName, setEditBusinessName] = useState(user?.user_metadata?.business_name || '')
+  const [editPhone, setEditPhone] = useState('')
+  const [editLicense, setEditLicense] = useState('')
+  const [isSavingBusiness, setIsSavingBusiness] = useState(false)
+
+  const handleSaveBusinessInfo = async () => {
+    setIsSavingBusiness(true)
+    
+    try {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user?.id,
+          business_name: editBusinessName,
+          phone: editPhone,
+          updated_at: new Date().toISOString()
+        })
+
+      if (profileError) {
+        alert('Failed to update profile')
+        return
+      }
+
+      // Update user metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { business_name: editBusinessName }
+      })
+
+      if (authError) {
+        console.error('Auth update error:', authError)
+      }
+
+      alert('Business info updated!')
+      setShowEditBusinessDialog(false)
+      window.location.reload() // Refresh to show new data
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred')
+    } finally {
+      setIsSavingBusiness(false)
+    }
+  }
 
   const [settings, setSettings] = useState({
     paymentTerms: "50-50",
@@ -154,7 +198,11 @@ export default function SettingsPage() {
               <Label className="text-sm text-muted-foreground">License Number</Label>
               <p className="text-base font-medium text-foreground mt-1">Not set</p>
             </div>
-            <Button variant="outline" className="w-full mt-2">
+            <Button 
+              variant="outline" 
+              className="w-full mt-2"
+              onClick={() => setShowEditBusinessDialog(true)}
+            >
               Edit Business Info
             </Button>
           </Card>
@@ -468,6 +516,53 @@ export default function SettingsPage() {
               }}
             >
               Log Out
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Business Info Dialog */}
+      <Dialog open={showEditBusinessDialog} onOpenChange={setShowEditBusinessDialog}>
+        <DialogContent className="mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Business Information</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="business-name">Business Name</Label>
+              <Input
+                id="business-name"
+                value={editBusinessName}
+                onChange={(e) => setEditBusinessName(e.target.value)}
+                className="h-14 text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="h-14 text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="license">License Number</Label>
+              <Input
+                id="license"
+                placeholder="License #"
+                value={editLicense}
+                onChange={(e) => setEditLicense(e.target.value)}
+                className="h-14 text-base"
+              />
+            </div>
+            <Button
+              onClick={handleSaveBusinessInfo}
+              disabled={isSavingBusiness || !editBusinessName.trim()}
+              className="w-full h-14 text-base font-semibold mt-2"
+            >
+              {isSavingBusiness ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </DialogContent>
