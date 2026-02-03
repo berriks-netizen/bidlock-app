@@ -8,6 +8,13 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   ArrowLeft,
   Plus, 
@@ -33,6 +40,10 @@ export default function ProposalsPage() {
   const { user, loading } = useAuth()
   const [activeNav, setActiveNav] = useState("Proposals")
   const [proposals, setProposals] = useState<any[]>([])
+  const [allProposals, setAllProposals] = useState<any[]>([])
+  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'highest' | 'lowest'>('recent')
+  const [showFilterDialog, setShowFilterDialog] = useState(false)
+  const [dateRange, setDateRange] = useState<'all' | '7days' | '30days' | '90days'>('all')
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,7 +70,60 @@ export default function ProposalsPage() {
       return
     }
 
-    setProposals(data || [])
+    setAllProposals(data || [])
+    applyFilters(data || [], sortBy, dateRange)
+  }
+
+  const applyFilters = (data: any[], sort: typeof sortBy, range: typeof dateRange) => {
+    let filtered = [...data]
+
+    // Date range filter
+    if (range !== 'all') {
+      const now = new Date()
+      const cutoff = new Date()
+      
+      switch (range) {
+        case '7days':
+          cutoff.setDate(now.getDate() - 7)
+          break
+        case '30days':
+          cutoff.setDate(now.getDate() - 30)
+          break
+        case '90days':
+          cutoff.setDate(now.getDate() - 90)
+          break
+      }
+      
+      filtered = filtered.filter(p => new Date(p.created_at) >= cutoff)
+    }
+
+    // Sort
+    switch (sort) {
+      case 'recent':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        break
+      case 'highest':
+        filtered.sort((a, b) => (b.total || 0) - (a.total || 0))
+        break
+      case 'lowest':
+        filtered.sort((a, b) => (a.total || 0) - (b.total || 0))
+        break
+    }
+
+    setProposals(filtered)
+  }
+
+  const handleSortChange = (newSort: typeof sortBy) => {
+    setSortBy(newSort)
+    applyFilters(allProposals, newSort, dateRange)
+  }
+
+  const handleDateRangeChange = (newRange: typeof dateRange) => {
+    setDateRange(newRange)
+    applyFilters(allProposals, sortBy, newRange)
   }
 
   if (loading) {
@@ -79,7 +143,7 @@ export default function ProposalsPage() {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
@@ -98,6 +162,33 @@ export default function ProposalsPage() {
             <Plus className="h-4 w-4" />
             New
           </Button>
+        </div>
+        
+        {/* Filters */}
+        <div className="flex gap-2">
+          <Select value={sortBy} onValueChange={handleSortChange}>
+            <SelectTrigger className="h-9 text-sm flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="highest">Highest Value</SelectItem>
+              <SelectItem value="lowest">Lowest Value</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={dateRange} onValueChange={handleDateRangeChange}>
+            <SelectTrigger className="h-9 text-sm flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="7days">Last 7 Days</SelectItem>
+              <SelectItem value="30days">Last 30 Days</SelectItem>
+              <SelectItem value="90days">Last 90 Days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </header>
 
