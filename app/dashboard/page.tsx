@@ -54,6 +54,7 @@ function formatCurrency(amount: number) {
 export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState("Home");
   const [proposals, setProposals] = useState<any[]>([])
+  const [isLoadingProposals, setIsLoadingProposals] = useState(true)
   const [stats, setStats] = useState([
     { label: "Sent", value: "0", color: "bg-primary/10 text-primary" },
     { label: "Pending", value: "$0", color: "bg-secondary/10 text-secondary" },
@@ -76,6 +77,7 @@ export default function DashboardPage() {
   const fetchProposals = async () => {
     if (!user) return
     
+    setIsLoadingProposals(true)
     const { data, error } = await supabase
       .from('proposals')
       .select('*')
@@ -103,6 +105,7 @@ export default function DashboardPage() {
       { label: "Pending", value: `$${Math.round(pendingTotal)}`, color: "bg-secondary/10 text-secondary" },
       { label: "Accepted", value: acceptedCount.toString(), color: "bg-emerald-500/10 text-emerald-600" },
     ])
+    setIsLoadingProposals(false)
   }
 
   if (loading) {
@@ -208,7 +211,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {proposals.length === 0 ? (
+            {isLoadingProposals ? (
+              <Card className="p-12 text-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading proposals...</p>
+              </Card>
+            ) : proposals.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="text-muted-foreground mb-4">
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
