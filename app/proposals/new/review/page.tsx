@@ -74,18 +74,19 @@ export default function ReviewProposalPage() {
     setIsSending(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
       
-      if (!user) {
+      if (!currentUser) {
         alert('You must be logged in to send proposals')
+        setIsSending(false)
         return
       }
 
-      // Save proposal to database with REAL data from context
-      const { error } = await supabase
+      // First save proposal to database
+      const { data: savedProposal, error: insertError } = await supabase
         .from('proposals')
         .insert({
-          user_id: user.id,
+          user_id: currentUser.id,
           customer_name: proposalData.customerName,
           customer_phone: proposalData.customerPhone,
           customer_email: proposalData.customerEmail,
@@ -96,19 +97,42 @@ export default function ReviewProposalPage() {
           subtotal: subtotal,
           tax_rate: parseFloat(taxRate),
           total: total,
-          status: 'sent',
+          status: 'draft',
           created_at: new Date().toISOString()
         })
+        .select()
+        .single()
 
-      if (error) {
-        console.error('Error saving proposal:', error)
+      if (insertError || !savedProposal) {
+        console.error('Error saving proposal:', insertError)
         alert('Failed to save proposal')
+        setIsSending(false)
         return
+      }
+
+      // Send email if email is enabled
+      if (sendViaEmail && proposalData.customerEmail) {
+        const emailResponse = await fetch('/api/send-proposal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            proposalId: savedProposal.id,
+            customerEmail: proposalData.customerEmail,
+            customerName: proposalData.customerName,
+            businessName: currentUser.user_metadata?.business_name || 'Your Business'
+          })
+        })
+
+        if (!emailResponse.ok) {
+          const error = await emailResponse.json()
+          console.error('Email send error:', error)
+          alert('Proposal saved but email failed to send')
+        }
       }
 
       setSent(true)
       setTimeout(() => {
-        resetProposal() // Clear the form data
+        resetProposal()
         router.push('/dashboard')
       }, 2000)
     } catch (error) {
@@ -145,7 +169,7 @@ export default function ReviewProposalPage() {
           subtotal: subtotal,
           tax_rate: parseFloat(taxRate),
           total: total,
-          status: 'draft', // Different from handleSend!
+          status: 'draft',
           created_at: new Date().toISOString()
         })
 
@@ -155,7 +179,6 @@ export default function ReviewProposalPage() {
         return
       }
 
-      // Show success and redirect
       alert('Draft saved successfully!')
       resetProposal()
       router.push('/dashboard')
@@ -244,62 +267,64 @@ export default function ReviewProposalPage() {
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground mb-1">Date:</p>
                   <p className="font-medium text-foreground">
-                    January 27, 2026
+                    {new Date().toLocaleDateString()}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Photo Gallery */}
-            <div className="p-6 border-b border-border">
-              <h3 className="font-semibold text-foreground mb-4">
-                Project Photos
-              </h3>
-              <div className="relative">
-                <div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted">
-                  {proposalData.photos.length > 0 ? (
+            {proposalData.photos.length > 0 && (
+              <div className="p-6 border-b border-border">
+                <h3 className="font-semibold text-foreground mb-4">
+                  Project Photos
+                </h3>
+                <div className="relative">
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted">
                     <img
                       src={proposalData.photos[currentPhotoIndex]}
                       alt={`Project photo ${currentPhotoIndex + 1}`}
                       className="w-full h-full object-cover"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      No photos added
-                    </div>
+                  </div>
+                  {proposalData.photos.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevPhoto}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-card/90 rounded-full flex items-center justify-center shadow-md hover:bg-card transition-colors"
+                        aria-label="Previous photo"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-foreground" />
+                      </button>
+                      <button
+                        onClick={nextPhoto}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-card/90 rounded-full flex items-center justify-center shadow-md hover:bg-card transition-colors"
+                        aria-label="Next photo"
+                      >
+                        <ChevronRight className="w-5 h-5 text-foreground" />
+                      </button>
+                    </>
                   )}
                 </div>
-                <button
-                  onClick={prevPhoto}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-card/90 rounded-full flex items-center justify-center shadow-md hover:bg-card transition-colors"
-                  aria-label="Previous photo"
-                >
-                  <ChevronLeft className="w-5 h-5 text-foreground" />
-                </button>
-                <button
-                  onClick={nextPhoto}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-card/90 rounded-full flex items-center justify-center shadow-md hover:bg-card transition-colors"
-                  aria-label="Next photo"
-                >
-                  <ChevronRight className="w-5 h-5 text-foreground" />
-                </button>
+                {/* Dots Indicator */}
+                {proposalData.photos.length > 1 && (
+                  <div className="flex justify-center gap-1.5 mt-3">
+                    {proposalData.photos.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPhotoIndex(idx)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          idx === currentPhotoIndex
+                            ? "bg-primary"
+                            : "bg-muted-foreground/30"
+                        }`}
+                        aria-label={`Go to photo ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              {/* Dots Indicator */}
-              <div className="flex justify-center gap-1.5 mt-3">
-                {proposalData.photos.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentPhotoIndex(idx)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      idx === currentPhotoIndex
-                        ? "bg-primary"
-                        : "bg-muted-foreground/30"
-                    }`}
-                    aria-label={`Go to photo ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Services Table */}
             <div className="p-6 border-b border-border">
@@ -530,7 +555,7 @@ export default function ReviewProposalPage() {
                 <div>
                   <p className="font-medium text-foreground">Send via Email</p>
                   <p className="text-sm text-muted-foreground">
-                    john.martinez@email.com
+                    {proposalData.customerEmail || 'No email provided'}
                   </p>
                 </div>
                 <Switch checked={sendViaEmail} onCheckedChange={setSendViaEmail} />
@@ -539,7 +564,9 @@ export default function ReviewProposalPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-foreground">Send via SMS</p>
-                  <p className="text-sm text-muted-foreground">(512) 555-0147</p>
+                  <p className="text-sm text-muted-foreground">
+                    {proposalData.customerPhone || 'No phone provided'}
+                  </p>
                 </div>
                 <Switch checked={sendViaSMS} onCheckedChange={setSendViaSMS} />
               </div>
