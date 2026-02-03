@@ -16,7 +16,8 @@ import {
   Home,
   FileText,
   Users,
-  Settings
+  Settings,
+  ChevronRight
 } from "lucide-react"
 
 const navItems = [
@@ -31,6 +32,7 @@ export default function CustomersPage() {
   const { user, loading } = useAuth()
   const [activeNav, setActiveNav] = useState("Customers")
   const [customers, setCustomers] = useState<any[]>([])
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,6 +48,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     if (!user) return
     
+    setIsLoadingCustomers(true)
     const { data, error } = await supabase
       .from('proposals')
       .select('customer_name, customer_address, customer_phone, customer_email')
@@ -54,6 +57,7 @@ export default function CustomersPage() {
 
     if (error) {
       console.error('Error fetching customers:', error)
+      setIsLoadingCustomers(false)
       return
     }
 
@@ -76,6 +80,7 @@ export default function CustomersPage() {
     })
 
     setCustomers(Array.from(customerMap.values()))
+    setIsLoadingCustomers(false)
   }
 
   if (loading) {
@@ -118,7 +123,12 @@ export default function CustomersPage() {
       </header>
 
       <main className="px-4 py-6">
-        {customers.length === 0 ? (
+        {isLoadingCustomers ? (
+          <Card className="p-12 text-center">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading customers...</p>
+          </Card>
+        ) : customers.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="text-muted-foreground mb-4">
               <UsersIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -137,14 +147,20 @@ export default function CustomersPage() {
         ) : (
           <div className="space-y-3">
             {customers.map((customer) => (
-              <Card key={customer.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <Card 
+                key={customer.id} 
+                className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push(`/customers/${encodeURIComponent(customer.name)}`)}
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">{customer.name}</h3>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{customer.address}</span>
-                    </div>
+                    {customer.address && (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>{customer.address}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -167,9 +183,7 @@ export default function CustomersPage() {
                   <span className="text-sm text-muted-foreground">
                     {customer.proposalCount} {customer.proposalCount === 1 ? 'proposal' : 'proposals'}
                   </span>
-                  <Button variant="ghost" size="sm">
-                    View Details
-                  </Button>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </Card>
             ))}
@@ -182,7 +196,7 @@ export default function CustomersPage() {
         <div className="flex items-center justify-around max-w-md mx-auto">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = item.path === '/customers'; // Always active on customers page
+            const isActive = item.path === '/customers';
             return (
               <button
                 key={item.label}
