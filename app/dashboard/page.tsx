@@ -225,7 +225,11 @@ export default function DashboardPage() {
           </Card>
         ) : (
           proposals.map((proposal) => (
-          <Card key={proposal.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            key={proposal.id} 
+            className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push(`/proposals/${proposal.id}`)}
+          >
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="font-semibold text-foreground text-lg">{proposal.customer_name}</h3>
